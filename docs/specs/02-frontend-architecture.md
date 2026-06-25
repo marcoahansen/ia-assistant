@@ -1,9 +1,9 @@
 # Especificação de Arquitetura — Frontend (Parte 1)
 
 > **Projeto:** Assistente Inteligente Full-Stack  
-> **Stack:** React 18 · TypeScript · Vite · Vitest · React Testing Library  
+> **Stack:** React 18 · TypeScript · Vite · Vitest · React Testing Library · **Ant Design 5**  
 > **Escopo:** Sprint 3 — Interface de chat funcional com upload de documentos  
-> **Versão:** 1.0.0  
+> **Versão:** 2.0.0  
 > **Status:** Draft — Spec-Driven Development (SDD)
 
 ---
@@ -38,9 +38,9 @@ O frontend é uma **SPA (Single Page Application)** que fornece a interface de c
 src/
 ├── main.tsx                        # Entry point
 ├── App.tsx                         # Root: conversationId, theme, routing
-├── App.css                         # Estilos globais / CSS variables (theme)
+├── App.css                         # Estilos globais / overrides mínimos
 ├── api/
-│   ├── client.ts                   # Axios/fetch wrapper com base URL
+│   ├── client.ts                   # Fetch wrapper com base URL
 │   ├── chatApi.ts                  # POST /api/chat
 │   ├── conversationApi.ts          # GET /api/conversations/{id}
 │   ├── documentApi.ts              # POST upload, GET list
@@ -50,19 +50,15 @@ src/
 │   └── useDocumentUpload.ts        # Estado e lógica de upload
 ├── components/
 │   ├── layout/
-│   │   └── ChatLayout.tsx          # Sidebar + área principal
+│   │   └── ChatLayout.tsx          # Sidebar + área principal (antd Layout)
 │   ├── chat/
 │   │   ├── MessageList.tsx
 │   │   ├── MessageBubble.tsx
 │   │   └── ChatInput.tsx
 │   ├── documents/
-│   │   └── DocumentUpload.tsx
-│   └── ui/                         # Primitivos reutilizáveis (Button, Spinner, etc.)
-│       ├── Button.tsx
-│       ├── Spinner.tsx
-│       └── ProgressBar.tsx
+│   │   └── DocumentUpload.tsx      # antd Upload + Modal
 ├── contexts/
-│   └── ThemeContext.tsx            # Dark/light theme
+│   └── ThemeContext.tsx            # Dark/light theme (antd ConfigProvider)
 ├── utils/
 │   ├── formatTimestamp.ts
 │   └── constants.ts                # API_BASE_URL, MAX_FILE_SIZE, ALLOWED_TYPES
@@ -80,19 +76,19 @@ src/
 ## 3. Hierarquia de Componentes
 
 ```
-<App>
+<App (antd ConfigProvider)>
 ├── <ThemeProvider>
-│   └── <ChatLayout>
-│       ├── [Sidebar]                    # Lista de conversas (placeholder Parte 1)
+│   └── <ChatLayout (antd Layout)>
+│       ├── [Sidebar]                    # Lista de conversas (placeholder)
 │       │   └── conversationId selector
 │       └── [Main Area]
 │           ├── <MessageList>
 │           │   └── <MessageBubble /> × N
-│           ├── [Typing Indicator]       # Condicional: isLoading
+│           ├── [Typing Indicator]       # antd Spin
 │           ├── <ChatInput>
-│           │   ├── <textarea>
+│           │   ├── <Input.TextArea>
 │           │   ├── <Button send>
-│           │   └── <DocumentUpload trigger>
+│           │   └── <Upload trigger>
 │           └── <DocumentUpload modal/panel>
 ```
 
@@ -130,6 +126,7 @@ src/
 
 **Comportamento:**
 - Inicializa com `conversationId = null` (nova conversa).
+- Provê `ConfigProvider` do Ant Design com `theme` vindo do `ThemeContext`.
 - Provê `ThemeProvider` envolvendo toda a árvore.
 - Renderiza `<ChatLayout />` como filho direto.
 
@@ -141,7 +138,7 @@ src/
 
 ### 4.2 `<ChatLayout />` — Layout Responsivo
 
-**Responsabilidade:** Estrutura visual com sidebar de conversas e área principal de chat.
+**Responsabilidade:** Estrutura visual com sidebar de conversas e área principal de chat (usando `antd Layout`, `Layout.Sider`, `Layout.Header`, `Layout.Content`).
 
 **Props:**
 
@@ -155,9 +152,9 @@ src/
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Header (logo + theme toggle)               │
+│  Layout.Header (logo + theme toggle)        │
 ├──────────┬──────────────────────────────────┤
-│ Sidebar  │  Main Chat Area                  │
+│ Sider    │  Content                         │
 │ (240px)  │  ┌────────────────────────────┐  │
 │          │  │ MessageList (flex-grow)    │  │
 │ Convs    │  ├────────────────────────────┤  │
@@ -167,7 +164,7 @@ src/
 ```
 
 **Acessibilidade:**
-- `<aside aria-label="Lista de conversas">` para sidebar.
+- `<aside aria-label="Lista de conversas">` para sidebar (antd Sider).
 - `<main id="main-chat" role="main" aria-label="Área de chat">` para área principal.
 - Layout responsivo: sidebar colapsável em viewport < 768px com botão hamburger acessível.
 
@@ -239,17 +236,17 @@ src/
 
 **Comportamento:**
 - `Enter` (sem Shift) envia mensagem.
-- `Shift + Enter` insere quebra de linha.
+- `Shift + Enter` insere quebra de linha (comportamento padrão do `Input.TextArea` do antd).
 - Botão de envio desabilitado se textarea vazio ou `isLoading`.
 - Textarea limpa após envio bem-sucedido.
 - Foco retorna ao textarea após envio.
 
 **Acessibilidade:**
 - `<form role="form" aria-label="Enviar mensagem">`.
-- Textarea: `<textarea aria-label="Digite sua mensagem" aria-describedby="input-hint" rows={1}>`.
+- Textarea: `antd Input.TextArea` com `aria-label="Digite sua mensagem"`.
 - Hint: `<span id="input-hint" className="sr-only">Pressione Enter para enviar, Shift+Enter para nova linha</span>`.
-- Botão envio: `<button type="submit" aria-label="Enviar mensagem" disabled={...}>`.
-- Botão upload: `<button type="button" aria-label="Anexar documento">`.
+- Botão envio: `antd Button` com `aria-label="Enviar mensagem"`.
+- Botão upload: `antd Button` com `aria-label="Anexar documento"`.
 - Durante loading: textarea recebe `aria-disabled="true"`.
 
 **Navegação por teclado:**
@@ -260,36 +257,31 @@ src/
 
 ### 4.6 `<DocumentUpload />` — Upload de Arquivos
 
-**Responsabilidade:** Drag-and-drop de arquivos com barra de progresso.
+**Responsabilidade:** Drag-and-drop de arquivos com barra de progresso (usando `antd Upload` + `antd Modal`).
 
 **Props:**
 
 | Prop | Tipo | Descrição |
 |---|---|---|
 | `onUploadComplete` | `(document: Document) => void` | Callback pós-upload |
-| `isOpen` | `boolean` | Controla visibilidade do painel |
-| `onClose` | `() => void` | Fecha o painel |
+| `isOpen` | `boolean` | Controla visibilidade do Modal |
+| `onClose` | `() => void` | Fecha o Modal |
 
 **Comportamento:**
-- Zona de drop aceita arrastar arquivos ou clique para selecionar.
+- Zona de drop aceita arrastar arquivos ou clique para selecionar (`antd Upload.Dragger`).
 - Tipos aceitos: `.pdf`, `.txt`, `.docx` (validação client-side antes do envio).
 - Tamanho máximo: 10 MB (validação client-side).
-- Barra de progresso durante upload (`XMLHttpRequest` ou Axios `onUploadProgress`).
+- Barra de progresso durante upload (antd `Progress` ou `Upload` nativo).
 - Exibe erro amigável para tipo/tamanho inválido.
 - Lista documentos já enviados (GET `/api/documents`) ao abrir.
 
 **Acessibilidade:**
-- Drop zone: `<div role="region" aria-label="Área de upload de documentos">`.
-- Input file oculto visualmente: `<input type="file" accept=".pdf,.txt,.docx" aria-label="Selecionar arquivo" className="sr-only">`.
-- Botão visível: `<button aria-label="Selecionar arquivo para upload">`.
-- Durante drag over: `aria-dropeffect="copy"`.
-- Progress bar: `<progress value={percent} max={100} aria-label="Progresso do upload: {percent}%">`.
-- Erros: `<div role="alert" aria-live="assertive">`.
-- Lista de documentos: `<ul aria-label="Documentos enviados">`.
+- Drop zone: `antd Upload.Dragger` com `aria-label` configurado.
+- Erros: `antd Alert` com `role="alert"`.
+- Lista de documentos: `antd List` ou `antd Table`.
 
 **Navegação por teclado:**
-- `Enter` / `Space` no botão abre seletor de arquivos.
-- `Escape` fecha o painel de upload.
+- `Escape` fecha o Modal de upload.
 
 ---
 
@@ -593,51 +585,79 @@ Exemplos:
 
 ## 9. Theming
 
-### 9.1 CSS Variables
+### 9.1 Ant Design Theme Config
 
-```css
-:root {
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f5f5f5;
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #666666;
-  --color-accent: #4f46e5;
-  --color-user-bubble: #4f46e5;
-  --color-assistant-bubble: #f0f0f0;
-  --color-border: #e0e0e0;
-  --color-error: #dc2626;
-}
+O tema é gerenciado pelo `ConfigProvider` do Ant Design com `theme.algorithm` (`theme.defaultAlgorithm` / `theme.darkAlgorithm`) e customizações via `theme.token`.
 
-[data-theme="dark"] {
-  --color-bg-primary: #1a1a2e;
-  --color-bg-secondary: #16213e;
-  --color-text-primary: #eaeaea;
-  --color-text-secondary: #a0a0a0;
-  --color-accent: #818cf8;
-  --color-user-bubble: #4338ca;
-  --color-assistant-bubble: #2a2a4a;
-  --color-border: #333355;
-  --color-error: #f87171;
-}
+```typescript
+// Exemplo de configuração
+import { ConfigProvider, theme } from 'antd';
+
+const { defaultAlgorithm, darkAlgorithm } = theme;
+
+// lightTokens / darkTokens sobrescrevem token primários do antd
+const lightTokens: ThemeConfig['token'] = {
+  colorPrimary: '#4f46e5',
+  colorBgContainer: '#ffffff',
+  colorBgLayout: '#f5f5f5',
+  colorText: '#1a1a1a',
+  colorBorder: '#e0e0e0',
+};
+
+const darkTokens: ThemeConfig['token'] = {
+  colorPrimary: '#818cf8',
+  colorBgContainer: '#1a1a2e',
+  colorBgLayout: '#16213e',
+  colorText: '#eaeaea',
+  colorBorder: '#333355',
+};
 ```
 
 ### 9.2 ThemeContext
 
 - Persiste preferência em `localStorage`.
 - Respeita `prefers-color-scheme` do OS como default.
-- Toggle acessível com `aria-pressed`.
+- Toggle acessível com `aria-pressed` (usando `antd Button` ou `Switch`).
+- Algoritmo e tokens são passados ao `ConfigProvider` no `<App />`.
 
 ---
 
 ## 10. Configuração
 
-### 10.1 Variáveis de Ambiente
+### 10.1 Dependências
+
+```json
+{
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "antd": "^5.12.0",
+    "@ant-design/icons": "^5.2.0",
+    "react-markdown": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "msw": "^2.0.0",
+    "jest-axe": "^9.0.0"
+  }
+}
+```
+
+### 10.2 Variáveis de Ambiente
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080/api
 ```
 
-### 10.2 vite.config.ts (test)
+### 10.3 vite.config.ts (test)
 
 ```typescript
 /// <reference types="vitest" />
@@ -656,13 +676,13 @@ export default defineConfig({
 
 ## 11. Checklist de Implementação (Sprint 3)
 
-- [ ] Projeto Vite + React + TypeScript inicializado
+- [ ] Projeto Vite + React + TypeScript + Ant Design inicializado
 - [ ] Camada `api/` com client e tipos espelhando backend
 - [ ] Hook `useChatConversation` com toda lógica de chat
 - [ ] Hook `useDocumentUpload` com lógica de upload
-- [ ] Componentes: App, ChatLayout, MessageList, MessageBubble, ChatInput, DocumentUpload
-- [ ] ThemeContext com dark/light mode
-- [ ] Acessibilidade: landmarks, ARIA, keyboard navigation
+- [ ] Componentes: App, ChatLayout (antd Layout), MessageList, MessageBubble, ChatInput (antd Input), DocumentUpload (antd Upload + Modal)
+- [ ] ThemeContext + ConfigProvider com dark/light mode (antd algorithm)
+- [ ] Acessibilidade: landmarks, ARIA, keyboard navigation (parcialmente herdada do antd)
 - [ ] MSW configurado para testes
 - [ ] Testes de integração hook + UI
 - [ ] Testes de acessibilidade (jest-axe)
@@ -679,5 +699,5 @@ export default defineConfig({
 | ADR-02 | fetch nativo (sem Axios) | Menos dependências; suficiente para Parte 1 |
 | ADR-03 | MSW para mocks de API | Testes realistas sem backend; reutilizável em Storybook |
 | ADR-04 | react-markdown para renderização | Seguro contra XSS; extensível |
-| ADR-05 | CSS variables para theming | Simples, performático, sem dependência de CSS-in-JS |
+| ADR-05 | **Ant Design como design system** | Primitivos prontos (Button, Upload, Layout, Progress, Spin), acessibilidade embutida, theming via algorithm, menos CSS custom para manter |
 | ADR-06 | A11y na spec, não afterthought | Requisitos definidos antes da implementação |

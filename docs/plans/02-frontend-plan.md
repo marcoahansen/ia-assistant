@@ -2,7 +2,7 @@
 
 > **Referência:** [02-frontend-architecture.md](../specs/02-frontend-architecture.md)  
 > **Sprint:** 3  
-> **Stack:** React 18 · TypeScript · Vite  
+> **Stack:** React 18 · TypeScript · Vite · **Ant Design 5**  
 > **Objetivo:** SPA de chat funcional com upload de documentos
 
 ---
@@ -10,14 +10,14 @@
 ## Visão geral
 
 | Fase | Foco | Entregável |
-|---|---|---|
-| 0 | Bootstrap | Projeto Vite sobe em `:5173` |
-| 1 | Fundação | API client, tipos, utils, CSS variables |
+|---|---|---|---|
+| 0 | Bootstrap | Projeto Vite + Ant Design sobe em `:5173` |
+| 1 | Fundação | API client, tipos, utils, ConfigProvider setup |
 | 2 | Hooks | Lógica de chat e upload isolada da UI |
-| 3 | UI primitivos | Button, Spinner, ProgressBar |
-| 4 | Chat UI | Layout, mensagens, input |
-| 5 | Upload | DocumentUpload com drag-and-drop |
-| 6 | Theming | Dark/light mode persistente |
+| 3 | ~~UI primitivos~~ | Ant Design já provê Button, Spin, Progress |
+| 4 | Chat UI | Layout, mensagens, input (antd Layout, Input, Button) |
+| 5 | Upload | DocumentUpload com antd Upload.Dragger + Modal |
+| 6 | Theming | Dark/light mode via antd ConfigProvider + algorithm |
 | 7 | Validação | Testes manuais E2E com backend |
 
 **Dependência externa:** backend rodando em `http://localhost:8080/api` a partir da Fase 2.
@@ -36,7 +36,9 @@
 - [ ] Criar estrutura de pastas conforme spec (`api/`, `hooks/`, `components/`, `contexts/`, `utils/`)
 - [ ] Configurar `.env` com `VITE_API_BASE_URL=http://localhost:8080/api`
 - [ ] Instalar dependências:
+  - `antd` + `@ant-design/icons` (design system)
   - `react-markdown` (renderização segura)
+- [ ] Remover `ui/` da estrutura (antd substitui Button, Spin, Progress)
 - [ ] Verificar: `npm run dev` abre em `http://localhost:5173`
 
 ### Critério de aceite
@@ -70,9 +72,9 @@
 - [ ] `constants.ts` — `MAX_FILE_SIZE` (10 MB), `ALLOWED_TYPES`
 - [ ] `formatTimestamp.ts` — ex: "14:30"
 
-**Estilos base (`App.css`):**
-- [ ] CSS variables para light theme (spec seção 9.1)
-- [ ] Reset mínimo de estilos
+**ConfigProvider (App.tsx):**
+- [ ] Configurar `ConfigProvider` do antd com `theme.token` (cores primárias, bordas)
+- [ ] Reset mínimo de estilos via `App.css`
 
 ### Critério de aceite
 
@@ -110,19 +112,11 @@
 
 ---
 
-## Fase 3 — Componentes UI primitivos
+## Fase 3 — ~~Componentes UI primitivos~~ (PULADA)
 
-**Duração estimada:** 0,5 dia
+**Ant Design já fornece:** `Button`, `Spin`, `Progress`, `Upload`, `Modal`, `Layout`, `Input`, `Alert`, `List`, `Switch`, `Typography`.
 
-### Tarefas
-
-- [ ] `Button.tsx` — variantes primary/secondary, disabled
-- [ ] `Spinner.tsx` — loading indicator reutilizável
-- [ ] `ProgressBar.tsx` — barra de progresso reutilizável
-
-### Critério de aceite
-
-- Componentes presentacionais, sem lógica de API
+Nenhum componente `ui/` custom é necessário. Basta importar do antd diretamente nos componentes de domínio.
 
 ---
 
@@ -147,15 +141,19 @@ Implementar na ordem de composição (de baixo para cima):
 ### 4.3 ChatInput
 
 - [ ] Props: `onSend`, `isLoading`, `onUploadClick`, `disabled`
+- [ ] Usar `antd Input.TextArea` com `onPressEnter`
 - [ ] Enter envia, Shift+Enter nova linha, Escape limpa
 - [ ] Limpar textarea após envio
+- [ ] Botão de envio: `antd Button`
+- [ ] Botão de anexar: `antd Button` com ícone Upload
 
 ### 4.4 ChatLayout
 
-- [ ] Header (logo + theme toggle)
+- [ ] `antd Layout`, `Layout.Header`, `Layout.Sider`, `Layout.Content`
+- [ ] Header (logo + theme toggle com `antd Switch`)
 - [ ] Sidebar placeholder (lista de conversas — Parte 1)
 - [ ] Área principal de chat
-- [ ] Responsivo: sidebar colapsável < 768px
+- [ ] Responsivo: Sider colapsável com `breakpoint="md"`
 
 ### 4.5 App (composição)
 
@@ -177,12 +175,12 @@ Implementar na ordem de composição (de baixo para cima):
 ### Tarefas
 
 - [ ] `DocumentUpload.tsx`:
-  - Painel/modal controlado por `isOpen` / `onClose`
-  - Drag-and-drop + clique para selecionar
+  - `antd Modal` controlado por `isOpen` / `onClose`
+  - `antd Upload.Dragger` para drag-and-drop + clique
   - Validação client-side: `.pdf`, `.txt`, `.docx`, max 10 MB
-  - Barra de progresso durante upload
+  - `antd Progress` durante upload
   - Lista de documentos ao abrir (via `useDocumentUpload`)
-  - Exibição de erros amigável
+  - Exibição de erros amigável com `antd Alert`
 - [ ] Integrar trigger no `ChatInput` (botão anexar)
 - [ ] Callback `onUploadComplete` após sucesso
 
@@ -204,12 +202,14 @@ Implementar na ordem de composição (de baixo para cima):
   - State `light` | `dark`
   - Persistir em `localStorage`
   - Default: `prefers-color-scheme`
-- [ ] CSS variables dark theme (`[data-theme="dark"]`)
-- [ ] Integrar toggle no header do `ChatLayout`
+  - Retornar `algorithm` e `token` para `ConfigProvider`
+- [ ] Configurar `ConfigProvider` no `<App />` com `theme={{ algorithm, token }}`
+- [ ] Integrar `antd Switch` no header do `ChatLayout` para toggle
 
 ### Critério de aceite
 
 - Tema persiste após reload
+- antd componentes respeitam dark/light mode
 
 ---
 
@@ -262,7 +262,8 @@ Implementar na ordem de composição (de baixo para cima):
 - [ ] Chat funcional: enviar, histórico, loading, scroll automático
 - [ ] Upload funcional: drag-and-drop, progresso, validação, listagem
 - [ ] Hooks isolam toda lógica; componentes presentacionais
-- [ ] Dark/light mode persistente
+- [ ] Dark/light mode persistente via antd ConfigProvider
+- [ ] a11y básica herdada do antd + customizações
 - [ ] Integração local com backend validada manualmente
 
 ---
