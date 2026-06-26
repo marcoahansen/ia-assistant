@@ -9,3 +9,4 @@ target/
 .classpath
 .vscode/
 uploads/
+data/
