@@ -1,5 +1,9 @@
 import { apiClient } from './client';
-import type { ConversationResponse } from './types';
+import type { ConversationListResponse, ConversationResponse } from './types';
+
+export async function listConversations(): Promise<ConversationListResponse> {
+  return apiClient<ConversationListResponse>('/conversations');
+}
 
 export async function getConversation(
   id: string,

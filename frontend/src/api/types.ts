@@ -16,6 +16,18 @@ export interface ChatMessageResponse {
   assistantMessage: MessageDetail;
 }
 
+export interface ConversationSummary {
+  id: string;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConversationListResponse {
+  conversations: ConversationSummary[];
+  total: number;
+}
+
 export interface ConversationResponse {
   id: string;
   title: string | null;

@@ -1,22 +1,28 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ConfigProvider } from 'antd';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useChatConversation } from './hooks/useChatConversation';
 import { useDocumentUpload } from './hooks/useDocumentUpload';
+import { listConversations } from './api/conversationApi';
 import ChatLayout from './components/layout/ChatLayout';
 import MessageList from './components/chat/MessageList';
 import ChatInput from './components/chat/ChatInput';
 import DocumentUpload from './components/documents/DocumentUpload';
+import type { ConversationSummary } from './api/types';
 
 function AppContent() {
   const { config } = useTheme();
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
 
   const {
     messages,
     isLoading: chatLoading,
     error: chatError,
+    conversationId,
     sendMessage,
+    loadConversation,
+    resetConversation,
     clearError: clearChatError,
   } = useChatConversation();
 
@@ -30,9 +36,32 @@ function AppContent() {
     clearError: clearUploadError,
   } = useDocumentUpload();
 
+  const loadConversations = async () => {
+    try {
+      const data = await listConversations();
+      setConversations(data.conversations);
+    } catch {
+      // Silently fail — sidebar apenas não atualiza
+    }
+  };
+
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  const handleSendMessage = async (content: string) => {
+    await sendMessage(content);
+    await loadConversations();
+  };
+
   return (
     <ConfigProvider theme={config}>
-      <ChatLayout>
+      <ChatLayout
+        conversations={conversations}
+        activeId={conversationId}
+        onSelect={loadConversation}
+        onNewChat={resetConversation}
+      >
         {chatError && (
           <div
             role="alert"
@@ -52,7 +81,7 @@ function AppContent() {
         <MessageList messages={messages} isLoading={chatLoading} />
 
         <ChatInput
-          onSend={sendMessage}
+          onSend={handleSendMessage}
           isLoading={chatLoading}
           onUploadClick={() => setUploadOpen(true)}
         />
