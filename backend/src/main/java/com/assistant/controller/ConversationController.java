@@ -1,5 +1,6 @@
 package com.assistant.controller;
 
+import com.assistant.dto.response.ConversationListResponse;
 import com.assistant.dto.response.ConversationResponse;
 import com.assistant.service.ConversationService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,11 @@ import java.util.UUID;
 public class ConversationController {
 
     private final ConversationService conversationService;
+
+    @GetMapping
+    public ResponseEntity<ConversationListResponse> listConversations() {
+        return ResponseEntity.ok(conversationService.listConversations());
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ConversationResponse> getConversation(@PathVariable UUID id) {
