@@ -15,13 +15,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DocumentResponse {
+public class DocumentStatusResponse {
 
     private UUID id;
     private String originalFilename;
-    private String contentType;
-    private Long sizeBytes;
     private DocumentStatus status;
     private Integer chunksCount;
     private Instant uploadedAt;
+    private Instant completedAt;
 }

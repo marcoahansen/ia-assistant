@@ -2,6 +2,8 @@ package com.assistant.domain.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,4 +44,12 @@ public class Document {
 
     @Column(nullable = false, updatable = false)
     private Instant uploadedAt;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private DocumentStatus status = DocumentStatus.PENDING;
+
+    @Column
+    private Integer chunksCount;
 }

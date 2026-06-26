@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -14,10 +13,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChatMessageResponse {
+public class SourceDTO {
 
-    private UUID conversationId;
-    private MessageDetail userMessage;
-    private MessageDetail assistantMessage;
-    private List<SourceDTO> sources;
+    private UUID chunkId;
+    private String chunkContent;
+    private UUID documentId;
+    private String documentName;
+    private Double similarityScore;
 }

@@ -3,15 +3,20 @@ package com.assistant.service;
 import com.assistant.domain.exception.FileSizeExceededException;
 import com.assistant.domain.exception.InvalidFileTypeException;
 import com.assistant.domain.model.Document;
+import com.assistant.domain.model.DocumentStatus;
 import com.assistant.dto.response.DocumentListResponse;
 import com.assistant.dto.response.DocumentResponse;
+import com.assistant.dto.response.DocumentStatusResponse;
 import com.assistant.mapper.DocumentMapper;
 import com.assistant.repository.DocumentRepository;
+import com.assistant.service.ingestion.DocumentIngestionService;
 import com.assistant.storage.FileStoragePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.persistence.EntityManager;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,6 +39,8 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final FileStoragePort fileStoragePort;
     private final DocumentMapper documentMapper;
+    private final DocumentIngestionService documentIngestionService;
+    private final EntityManager entityManager;
 
     public DocumentResponse uploadDocument(MultipartFile file) {
         String contentType = file.getContentType();
@@ -58,10 +65,18 @@ public class DocumentService {
                 .storedFilename(storedFilename)
                 .contentType(contentType)
                 .sizeBytes(file.getSize())
+                .status(DocumentStatus.PENDING)
                 .uploadedAt(Instant.now())
                 .build();
 
         document = documentRepository.save(document);
+
+        document.setStatus(DocumentStatus.PROCESSING);
+        document = documentRepository.save(document);
+        entityManager.flush();
+
+        documentIngestionService.ingestDocument(document.getId());
+
         return documentMapper.toResponse(document);
     }
 
@@ -75,6 +90,13 @@ public class DocumentService {
                 .documents(responses)
                 .total(responses.size())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public DocumentStatusResponse getDocumentStatus(UUID id) {
+        Document document = documentRepository.findById(id)
+                .orElseThrow(() -> new com.assistant.domain.exception.DocumentNotFoundException(id));
+        return documentMapper.toStatusResponse(document);
     }
 
     private String sanitizeFilename(String filename) {
