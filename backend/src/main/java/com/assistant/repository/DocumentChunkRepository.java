@@ -15,10 +15,10 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, UU
     @Query(value = """
             SELECT dc.id as chunkId, dc.content as chunkContent,
                    d.id as documentId, d.original_filename as documentName,
-                   (1 - (dc.embedding <=> CAST(:embedding AS vector))) as similarityScore
+                   (1 - (CAST(dc.embedding AS vector) <=> CAST(:embedding AS vector))) as similarityScore
             FROM document_chunks dc
             JOIN documents d ON d.id = dc.document_id
-            WHERE (1 - (dc.embedding <=> CAST(:embedding AS vector))) >= :minSimilarity
+            WHERE (1 - (CAST(dc.embedding AS vector) <=> CAST(:embedding AS vector))) >= :minSimilarity
             ORDER BY similarityScore DESC
             LIMIT :topK
             """, nativeQuery = true)

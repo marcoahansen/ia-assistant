@@ -41,7 +41,7 @@ public class DocumentChunk {
     @Column(name = "chunk_index", nullable = false)
     private Integer chunkIndex;
 
-    @Column(columnDefinition = "vector(1536)")
+    @Column(columnDefinition = "TEXT")
     private String embedding;
 
     @Column(name = "created_at", nullable = false, updatable = false)
