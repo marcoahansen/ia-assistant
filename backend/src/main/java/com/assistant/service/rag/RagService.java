@@ -1,8 +1,9 @@
 package com.assistant.service.rag;
 
-import com.assistant.domain.exception.RagServiceException;
 import com.assistant.service.embedding.EmbeddingService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +12,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class RagService {
+
+    private static final Logger log = LoggerFactory.getLogger(RagService.class);
 
     private final EmbeddingService embeddingService;
     private final ChunkRetrievalPort chunkRetrievalPort;
@@ -23,31 +26,28 @@ public class RagService {
     private double minSimilarity;
 
     public RagContext enrichPrompt(String question, String conversationHistory) {
-        try {
-            if (topK <= 0) {
-                String prompt = buildPrompt(question, conversationHistory, List.of());
-                String response = llmPort.call(prompt);
-                return RagContext.builder()
-                        .enrichedPrompt(prompt)
-                        .sources(List.of())
-                        .build();
-            }
+        List<ChunkResult> relevantChunks = retrieveRelevantChunks(question);
 
+        String prompt = buildPrompt(question, conversationHistory, relevantChunks);
+
+        return RagContext.builder()
+                .enrichedPrompt(prompt)
+                .sources(relevantChunks)
+                .build();
+    }
+
+    private List<ChunkResult> retrieveRelevantChunks(String question) {
+        if (topK <= 0) {
+            return List.of();
+        }
+
+        try {
             List<Float> questionEmbedding = embeddingService.embed(question);
             String embeddingStr = formatVector(questionEmbedding);
-
-            List<ChunkResult> relevantChunks = chunkRetrievalPort.findSimilar(embeddingStr, topK, minSimilarity);
-
-            String prompt = buildPrompt(question, conversationHistory, relevantChunks);
-            String response = llmPort.call(prompt);
-
-            return RagContext.builder()
-                    .enrichedPrompt(prompt)
-                    .sources(relevantChunks)
-                    .build();
-
+            return chunkRetrievalPort.findSimilar(embeddingStr, topK, minSimilarity);
         } catch (Exception e) {
-            throw new RagServiceException("RAG enrichment failed: " + e.getMessage(), e);
+            log.warn("Failed to retrieve relevant chunks (RAG skipped): {}", e.getMessage());
+            return List.of();
         }
     }
 
