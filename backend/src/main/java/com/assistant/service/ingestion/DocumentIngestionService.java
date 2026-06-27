@@ -26,8 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
-
 @Service
 @RequiredArgsConstructor
 public class DocumentIngestionService {
@@ -93,7 +91,6 @@ public class DocumentIngestionService {
             document.setStatus(DocumentStatus.FAILED);
             documentRepository.save(document);
             n8nWebhookNotifier.notifyIngestionComplete(documentId, DocumentStatus.FAILED, 0);
-            throw new IngestionFailedException(documentId, e.getMessage());
         }
     }
 
