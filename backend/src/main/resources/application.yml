@@ -28,8 +28,8 @@ app:
     allowed-origins: http://localhost:5173
 
   rag:
-    top-k: 5
-    min-similarity: 0.7
+    top-k: 10
+    min-similarity: 0.5
     chunk:
       max-size: 512
       overlap: 64
