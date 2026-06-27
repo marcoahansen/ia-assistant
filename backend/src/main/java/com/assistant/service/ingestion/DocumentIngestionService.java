@@ -90,7 +90,6 @@ public class DocumentIngestionService {
             log.error("Ingestion failed for document {}: {}", documentId, e.getMessage());
             document.setStatus(DocumentStatus.FAILED);
             documentRepository.save(document);
-            n8nWebhookNotifier.notifyIngestionComplete(documentId, DocumentStatus.FAILED, 0);
         }
     }
 
