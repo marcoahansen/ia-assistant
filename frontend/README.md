@@ -49,3 +49,4 @@ src/
 
 - A aplicação depende do backend rodando em `http://localhost:8080`.
 - Configure a URL do backend pela variável de ambiente `VITE_API_URL` (arquivo `.env`).
+- O status dos documentos é verificado via polling a cada **5 segundos** — ajustável em `src/hooks/useDocumentUpload.ts` (`POLL_INTERVAL`).
