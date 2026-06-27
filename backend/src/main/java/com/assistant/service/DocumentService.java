@@ -72,6 +72,7 @@ public class DocumentService {
                 .build();
 
         document = documentRepository.save(document);
+        UUID documentId = document.getId();
 
         document.setStatus(DocumentStatus.PROCESSING);
         document = documentRepository.save(document);
@@ -80,7 +81,7 @@ public class DocumentService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                documentIngestionService.ingestDocument(document.getId());
+                documentIngestionService.ingestDocument(documentId);
             }
         });
 
