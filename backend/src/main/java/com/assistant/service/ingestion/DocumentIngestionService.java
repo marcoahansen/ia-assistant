@@ -49,10 +49,10 @@ public class DocumentIngestionService {
     @Async
     @Transactional
     public void ingestDocument(UUID documentId) {
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new DocumentNotFoundException(documentId));
-
         try {
+            Document document = documentRepository.findById(documentId)
+                    .orElseThrow(() -> new DocumentNotFoundException(documentId));
+
             document.setStatus(DocumentStatus.PROCESSING);
             documentRepository.save(document);
 
@@ -88,8 +88,7 @@ public class DocumentIngestionService {
 
         } catch (Exception e) {
             log.error("Ingestion failed for document {}: {}", documentId, e.getMessage());
-            document.setStatus(DocumentStatus.FAILED);
-            documentRepository.save(document);
+            handleIngestionError(documentId, e);
         }
     }
 
@@ -170,6 +169,26 @@ public class DocumentIngestionService {
             return chunk.substring(lastNewline + 1);
         }
         return chunk.substring(chunk.length() - chunkOverlap);
+    }
+
+    private void handleIngestionError(UUID documentId, Exception e) {
+        try {
+            documentRepository.findById(documentId).ifPresentOrElse(
+                    document -> {
+                        document.setStatus(DocumentStatus.FAILED);
+                        documentRepository.save(document);
+                    },
+                    () -> log.warn("Document {} not found in DB to mark as FAILED", documentId)
+            );
+        } catch (Exception dbEx) {
+            log.error("Failed to update document {} status to FAILED: {}", documentId, dbEx.getMessage());
+        }
+
+        try {
+            n8nWebhookNotifier.notifyIngestionComplete(documentId, DocumentStatus.FAILED, 0);
+        } catch (Exception notifEx) {
+            log.error("Failed to notify n8n for document {}: {}", documentId, notifEx.getMessage());
+        }
     }
 
     private String formatVector(List<Float> vector) {

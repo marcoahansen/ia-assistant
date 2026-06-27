@@ -14,6 +14,8 @@ import com.assistant.storage.FileStoragePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.persistence.EntityManager;
@@ -75,7 +77,12 @@ public class DocumentService {
         document = documentRepository.save(document);
         entityManager.flush();
 
-        documentIngestionService.ingestDocument(document.getId());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                documentIngestionService.ingestDocument(document.getId());
+            }
+        });
 
         return documentMapper.toResponse(document);
     }
