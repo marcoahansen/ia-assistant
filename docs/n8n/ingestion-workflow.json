@@ -1,10 +1,11 @@
 {
-  "name": "Ingestão - Log",
+  "name": "Ingestão - Notificação de Completion",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "ingestion-complete",
+        "responseMode": "responseNode",
         "options": {}
       },
       "id": "webhook",
@@ -15,18 +16,68 @@
     },
     {
       "parameters": {
-        "jsCode": "const { documentId, status, chunksCount } = $input.first().json;\n\nif (status === 'COMPLETED') {\n  console.log(`[OK] Documento ${documentId} - ${chunksCount} chunks`);\n} else {\n  console.error(`[FAIL] Documento ${documentId} - ${status}`);\n}\n\nreturn $input.first().json;"
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equal",
+              "value2": "COMPLETED"
+            }
+          ]
+        }
       },
-      "id": "log",
-      "name": "Log",
+      "id": "switch",
+      "name": "Status",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [280, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { documentId, chunksCount } = $input.first().json;\nconsole.log(`[OK] Documento ingerido (${documentId}) - ${chunksCount} chunks`);\nreturn $input.first().json;"
+      },
+      "id": "success",
+      "name": "Sucesso",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [280, 300]
+      "position": [560, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { documentId, status } = $input.first().json;\nconsole.error(`[FAIL] Documento ${documentId} status: ${status}`);\nreturn $input.first().json;"
+      },
+      "id": "failure",
+      "name": "Falha",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 400]
+    },
+    {
+      "parameters": {
+        "content": "{{ $json }}"
+      },
+      "id": "respond",
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 300]
     }
   ],
   "connections": {
     "Webhook": {
-      "main": [[{ "node": "Log", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Status", "type": "main", "index": 0 }]]
+    },
+    "Status": {
+      "main": [
+        [{ "node": "Sucesso", "type": "main", "index": 0 }],
+        [{ "node": "Falha", "type": "main", "index": 0 }]
+      ]
+    },
+    "Sucesso": {
+      "main": [[{ "node": "Responder", "type": "main", "index": 0 }]]
+    },
+    "Falha": {
+      "main": [[{ "node": "Responder", "type": "main", "index": 0 }]]
     }
   },
   "settings": {},
