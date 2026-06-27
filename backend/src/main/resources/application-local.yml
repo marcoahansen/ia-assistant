@@ -1,0 +1,12 @@
+app:
+  embedding:
+    provider: ollama
+    url: ${LOCAL_EMBEDDING_URL:http://localhost:11434/v1/embeddings}
+    api-key: ""
+    model: ${LOCAL_EMBEDDING_MODEL:nomic-embed-text}
+    dimensions: ${LOCAL_EMBEDDING_DIMENSIONS:768}
+
+  llm:
+    url: ${LOCAL_LLM_URL:http://localhost:11434/v1/chat/completions}
+    api-key: ""
+    model: ${LOCAL_LLM_MODEL:llama3.2:1b}
