@@ -10,10 +10,29 @@ export interface ChatMessageRequest {
   content: string;
 }
 
+export interface SourceDTO {
+  chunkId: string;
+  chunkContent: string;
+  documentId: string;
+  documentName: string;
+  similarityScore: number;
+}
+
+export type DocumentStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
 export interface ChatMessageResponse {
   conversationId: string;
   userMessage: MessageDetail;
   assistantMessage: MessageDetail;
+  sources?: SourceDTO[];
+}
+
+export interface DocumentStatusResponse {
+  id: string;
+  originalFilename: string;
+  status: DocumentStatus;
+  chunksCount: number | null;
+  uploadedAt: string;
 }
 
 export interface ConversationSummary {
@@ -41,6 +60,8 @@ export interface DocumentResponse {
   originalFilename: string;
   contentType: string;
   sizeBytes: number;
+  status: DocumentStatus;
+  chunksCount: number | null;
   uploadedAt: string;
 }
 

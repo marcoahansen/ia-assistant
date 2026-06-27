@@ -1,10 +1,14 @@
 import { apiClient } from './client';
-import type { DocumentListResponse, DocumentResponse } from './types';
+import type { DocumentListResponse, DocumentResponse, DocumentStatusResponse } from './types';
 import { API_BASE_URL } from '../utils/constants';
 import { ApiError } from './types';
 
 export async function listDocuments(): Promise<DocumentListResponse> {
   return apiClient<DocumentListResponse>('/documents');
+}
+
+export async function getDocumentStatus(id: string): Promise<DocumentStatusResponse> {
+  return apiClient<DocumentStatusResponse>(`/documents/${id}/status`);
 }
 
 export async function uploadDocument(

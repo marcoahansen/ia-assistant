@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
-import type { MessageDetail, ChatMessageRequest } from '../api/types';
+import type { MessageDetail, ChatMessageRequest, SourceDTO } from '../api/types';
 import { sendChatMessage } from '../api/chatApi';
 import { getConversation } from '../api/conversationApi';
 
 export interface UseChatConversationReturn {
   messages: MessageDetail[];
+  sourcesMap: Record<string, SourceDTO[]>;
   conversationId: string | null;
   isLoading: boolean;
   error: string | null;
@@ -16,6 +17,7 @@ export interface UseChatConversationReturn {
 
 export function useChatConversation(): UseChatConversationReturn {
   const [messages, setMessages] = useState<MessageDetail[]>([]);
+  const [sourcesMap, setSourcesMap] = useState<Record<string, SourceDTO[]>>({});
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +46,13 @@ export function useChatConversation(): UseChatConversationReturn {
           response.userMessage,
           response.assistantMessage,
         ]);
+
+        if (response.sources && response.sources.length > 0) {
+          setSourcesMap((prev) => ({
+            ...prev,
+            [response.assistantMessage.id]: response.sources!,
+          }));
+        }
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Erro ao enviar mensagem';
@@ -74,12 +83,14 @@ export function useChatConversation(): UseChatConversationReturn {
 
   const resetConversation = useCallback(() => {
     setMessages([]);
+    setSourcesMap({});
     setConversationId(null);
     clearError();
   }, [clearError]);
 
   return {
     messages,
+    sourcesMap,
     conversationId,
     isLoading,
     error,

@@ -17,6 +17,7 @@ function AppContent() {
 
   const {
     messages,
+    sourcesMap,
     isLoading: chatLoading,
     error: chatError,
     conversationId,
@@ -28,6 +29,7 @@ function AppContent() {
 
   const {
     documents,
+    documentStatuses,
     isUploading,
     progress,
     error: uploadError,
@@ -78,7 +80,11 @@ function AppContent() {
           </div>
         )}
 
-        <MessageList messages={messages} isLoading={chatLoading} />
+        <MessageList
+          messages={messages}
+          sourcesMap={sourcesMap}
+          isLoading={chatLoading}
+        />
 
         <ChatInput
           onSend={handleSendMessage}
@@ -90,6 +96,7 @@ function AppContent() {
           isOpen={uploadOpen}
           onClose={() => setUploadOpen(false)}
           documents={documents}
+          documentStatuses={documentStatuses}
           isUploading={isUploading}
           progress={progress}
           error={uploadError}

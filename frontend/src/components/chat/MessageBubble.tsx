@@ -1,15 +1,17 @@
 import { Typography } from 'antd';
 import Markdown from 'react-markdown';
-import type { MessageDetail } from '../../api/types';
+import type { MessageDetail, SourceDTO } from '../../api/types';
 import { formatTimestamp } from '../../utils/formatTimestamp';
+import SourcePanel from './SourcePanel';
 
 const { Text } = Typography;
 
 interface MessageBubbleProps {
   message: MessageDetail;
+  sources?: SourceDTO[];
 }
 
-export default function MessageBubble({ message }: MessageBubbleProps) {
+export default function MessageBubble({ message, sources }: MessageBubbleProps) {
   const isOwn = message.role === 'USER';
 
   return (
@@ -17,7 +19,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       aria-label={isOwn ? 'Sua mensagem' : 'Resposta do assistente'}
       style={{
         display: 'flex',
-        justifyContent: isOwn ? 'flex-end' : 'flex-start',
+        flexDirection: 'column',
+        alignItems: isOwn ? 'flex-end' : 'flex-start',
         marginBottom: 12,
       }}
     >
@@ -48,6 +51,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           </Text>
         </div>
       </div>
+      {!isOwn && sources && sources.length > 0 && <SourcePanel sources={sources} />}
     </article>
   );
 }

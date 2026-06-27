@@ -1,15 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
-import type { MessageDetail } from '../../api/types';
+import type { MessageDetail, SourceDTO } from '../../api/types';
 import MessageBubble from './MessageBubble';
 
 interface MessageListProps {
   messages: MessageDetail[];
+  sourcesMap: Record<string, SourceDTO[]>;
   isLoading: boolean;
 }
 
-export default function MessageList({ messages, isLoading }: MessageListProps) {
+export default function MessageList({ messages, sourcesMap, isLoading }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
       )}
 
       {messages.map((msg) => (
-        <MessageBubble key={msg.id} message={msg} />
+        <MessageBubble key={msg.id} message={msg} sources={sourcesMap[msg.id]} />
       ))}
 
       {isLoading && (

@@ -1,0 +1,88 @@
+{
+  "name": "Ingestão - Notificação de Completion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ingestion-complete",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equal",
+              "value2": "COMPLETED"
+            }
+          ]
+        }
+      },
+      "id": "switch",
+      "name": "Status",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [280, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { documentId, originalFilename } = $input.first().json;\n\nconsole.log(`[OK] Documento ingerido: ${originalFilename} (${documentId})`);\n\nreturn $input.first().json;"
+      },
+      "id": "success",
+      "name": "Sucesso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { documentId, originalFilename, status } = $input.first().json;\n\nconsole.error(`[FAIL] Documento ${originalFilename} (${documentId}) status: ${status}`);\n\nreturn $input.first().json;"
+      },
+      "id": "failure",
+      "name": "Falha",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 400]
+    },
+    {
+      "parameters": {
+        "content": "===\n{{ $node[\"Webhook\"].json.status === \"COMPLETED\" ? \"✅ Sucesso\" : \"❌ Falha\" }}\n===\n\n**Documento:** {{ $node[\"Webhook\"].json.originalFilename }}\n**ID:** {{ $node[\"Webhook\"].json.documentId }}\n**Status:** {{ $node[\"Webhook\"].json.status }}\n**Timestamp:** {{ $node[\"Webhook\"].json.timestamp ?? $now.toISO() }}"
+      },
+      "id": "respond",
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Status", "type": "main", "index": 0 }]]
+    },
+    "Status": {
+      "main": [
+        [{ "node": "Sucesso", "type": "main", "index": 0 }],
+        [{ "node": "Falha", "type": "main", "index": 0 }]
+      ]
+    },
+    "Sucesso": {
+      "main": [[{ "node": "Responder", "type": "main", "index": 0 }]]
+    },
+    "Falha": {
+      "main": [[{ "node": "Responder", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "pinData": {},
+  "versionId": "ingestion-v1",
+  "triggerCount": 1,
+  "active": true
+}

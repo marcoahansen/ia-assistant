@@ -1,9 +1,9 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { Modal, Upload, Progress, List, Alert, Button, Typography } from 'antd';
+import { Modal, Upload, Progress, List, Alert, Button, Typography, Tag } from 'antd';
 import { InboxOutlined, ReloadOutlined } from '@ant-design/icons';
-import type { UploadFile } from 'antd';
-import type { DocumentResponse } from '../../api/types';
+import type { DocumentResponse, DocumentStatus } from '../../api/types';
 import { ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '../../utils/constants';
+import type { DocumentStatusInfo } from '../../hooks/useDocumentUpload';
 
 const { Dragger } = Upload;
 const { Text } = Typography;
@@ -12,6 +12,7 @@ interface DocumentUploadProps {
   isOpen: boolean;
   onClose: () => void;
   documents: DocumentResponse[];
+  documentStatuses: Record<string, DocumentStatusInfo>;
   isUploading: boolean;
   progress: number;
   error: string | null;
@@ -20,10 +21,18 @@ interface DocumentUploadProps {
   onClearError: () => void;
 }
 
+const statusConfig: Record<DocumentStatus, { color: string; label: string }> = {
+  PENDING: { color: 'default', label: 'Pendente' },
+  PROCESSING: { color: 'processing', label: 'Processando' },
+  COMPLETED: { color: 'success', label: 'Pronto' },
+  FAILED: { color: 'error', label: 'Falha' },
+};
+
 export default function DocumentUpload({
   isOpen,
   onClose,
   documents,
+  documentStatuses,
   isUploading,
   progress,
   error,
@@ -51,6 +60,9 @@ export default function DocumentUpload({
     },
     [onUpload],
   );
+
+  const getStatusInfo = (docId: string): DocumentStatusInfo | undefined =>
+    documentStatuses[docId];
 
   return (
     <Modal
@@ -118,14 +130,25 @@ export default function DocumentUpload({
         style={{ marginTop: 8 }}
         locale={{ emptyText: 'Nenhum documento enviado' }}
         dataSource={documents}
-        renderItem={(doc) => (
-          <List.Item>
-            <List.Item.Meta
-              title={doc.originalFilename}
-              description={`${(doc.sizeBytes / 1024).toFixed(1)} KB`}
-            />
-          </List.Item>
-        )}
+        renderItem={(doc) => {
+          const info = getStatusInfo(doc.id) ?? doc;
+          const status = 'status' in doc ? (doc as DocumentResponse).status : (info as DocumentStatusInfo).status;
+          const cfg = statusConfig[(status as DocumentStatus) ?? 'PENDING'];
+
+          return (
+            <List.Item>
+              <List.Item.Meta
+                title={
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>{doc.originalFilename}</span>
+                    <Tag color={cfg.color}>{cfg.label}</Tag>
+                  </div>
+                }
+                description={`${(doc.sizeBytes / 1024).toFixed(1)} KB`}
+              />
+            </List.Item>
+          );
+        }}
       />
     </Modal>
   );
